@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.uv-cache/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Tooling caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node (Streamlit needs none, but keep clean if we ever add JS tooling)
+node_modules/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.claude/settings.local.json
+
+# Data (never commit real regulatory documents or embeddings)
+data/raw/
+data/processed/
+*.pdf
+*.docx
+!docs/**/*.pdf
+
+# Docker volumes
+deployment/.volumes/

@@ -1,0 +1,18 @@
+[project]
+name = "regintel-application"
+version = "0.1.0"
+description = "RegIntel AI — application layer: use cases and ports (interfaces). Depends only on the domain layer."
+requires-python = ">=3.11"
+dependencies = [
+    "regintel-domain",
+]
+
+[tool.uv.sources]
+regintel-domain = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/regintel_application"]
