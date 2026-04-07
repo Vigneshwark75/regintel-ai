@@ -102,7 +102,7 @@ make test           # pytest
 Built incrementally, one phase per commit/PR — see commit history for progress.
 
 - [x] **Phase 0** — Repo scaffold: uv workspace, tooling, Docker Compose skeleton
-- [ ] **Phase 1** — Domain layer: entities, value objects, unit tests
+- [x] **Phase 1** — Domain layer: entities, value objects, unit tests
 - [ ] **Phase 2** — Infrastructure: Postgres models + Alembic, Qdrant client wrapper
 - [ ] **Phase 3** — Document ingestion pipeline
 - [ ] **Phase 4** — LLM provider abstraction (Anthropic + OpenAI, fallback router)
