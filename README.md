@@ -47,18 +47,31 @@ regintel-ai/
 
 **Two core flows:**
 
-1. **Ingestion** — upload PDF/DOCX → parse → chunk (clause/section-aware) → embed → vectors
-   into Qdrant, metadata + full text into Postgres.
-2. **Agentic query** — user asks a question → orchestrator runs a tool-calling loop against
-   the active LLM provider, choosing from `retrieve_chunks`, `compare_regulations`,
-   `generate_action_items`, `summarize_regulation` → every claim is grounded in retrieved
-   chunks and cited back to its source clause/page.
+1. **Ingestion** — upload PDF/DOCX → parse → chunk (clause/section-aware) → embed
+   (OpenAI `text-embedding-3-large`) → vectors into Qdrant, metadata + full text into Postgres.
+2. **Agentic query** — user asks a question → a LangGraph agent runs a tool-calling loop against
+   the active LLM provider, choosing from `retrieve_chunks` (hybrid search + Cohere Rerank),
+   `compare_regulations`, `generate_action_items`, `summarize_regulation` → every claim is
+   grounded in retrieved chunks and cited back to its source clause/page.
 
 **Multi-provider LLM layer** — one `LLMProvider` port, `AnthropicProvider` and `OpenAIProvider`
 adapters behind it, selected via config with a fallback chain. The point isn't "support two
 SDKs," it's a system that keeps working if one vendor is rate-limited or down.
 
+**Guardrails** — NeMo Guardrails around both directions: ingested documents are screened for
+prompt-injection patterns before they ever reach the LLM context, and agent outputs are
+validated against structured schemas before being returned to a user.
+
+**Observability & evals** — every LLM call and agent step is traced in Opik (also used for
+prompt versioning, so a prompt change is never a silent, untracked edit). Retrieval and answer
+quality are measured with Ragas (faithfulness, context precision/recall, answer relevancy)
+against a small golden eval set.
+
 **Auth/RBAC** — JWT-based, roles: CRO, Compliance Officer, Risk, Auditor, Ops.
+
+**Memory** — no separate memory store. Every `ComplianceQuery` is persisted in Postgres as it's
+answered, which doubles as both short-term conversation context and the audit trail a
+compliance system needs to keep regardless.
 
 ## Tech stack
 
@@ -69,6 +82,13 @@ SDKs," it's a system that keeps working if one vendor is rate-limited or down.
 | Vector store | Qdrant |
 | Relational store | PostgreSQL |
 | LLM | Anthropic Claude + OpenAI, behind a shared provider abstraction |
+| Embeddings | OpenAI `text-embedding-3-large` |
+| Reranker | Cohere Rerank |
+| Agent orchestration | LangGraph |
+| Guardrails | NeMo Guardrails (input injection screening + output validation) |
+| Observability & prompt management | Opik |
+| Evals | Ragas (faithfulness, context precision/recall, answer relevancy) |
+| Memory | Postgres-backed query history (doubles as audit trail) |
 | Package/workspace management | uv |
 | Tooling | ruff, black, mypy (strict), pytest, pre-commit |
 
@@ -104,11 +124,12 @@ Built incrementally, one phase per commit/PR — see commit history for progress
 - [x] **Phase 0** — Repo scaffold: uv workspace, tooling, Docker Compose skeleton
 - [x] **Phase 1** — Domain layer: entities, value objects, unit tests
 - [ ] **Phase 2** — Infrastructure: Postgres models + Alembic, Qdrant client wrapper
-- [ ] **Phase 3** — Document ingestion pipeline
+- [ ] **Phase 3** — Document ingestion pipeline: parsing, chunking, OpenAI embeddings,
+      NeMo Guardrails input screening
 - [ ] **Phase 4** — LLM provider abstraction (Anthropic + OpenAI, fallback router)
-- [ ] **Phase 5** — Retrieval: hybrid search + citation grounding
-- [ ] **Phase 6** — Agent orchestrator: tool-calling loop
-- [ ] **Phase 7** — FastAPI endpoints + JWT auth/RBAC
+- [ ] **Phase 5** — Retrieval: hybrid search + Cohere Rerank + citation grounding
+- [ ] **Phase 6** — Agent orchestrator: LangGraph tool-calling loop
+- [ ] **Phase 7** — FastAPI endpoints + JWT auth/RBAC + NeMo Guardrails output validation
 - [ ] **Phase 8** — Streamlit UI: upload, chat, comparison, action-item dashboard
-- [ ] **Phase 9** — Observability + groundedness eval set
+- [ ] **Phase 9** — Opik observability/prompt management + Ragas eval set
 - [ ] **Phase 10** — CI, deployment polish, docs
