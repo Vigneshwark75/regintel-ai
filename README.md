@@ -50,9 +50,17 @@ regintel-ai/
 1. **Ingestion** — upload PDF/DOCX → parse → chunk (clause/section-aware) → embed
    (OpenAI `text-embedding-3-large`) → vectors into Qdrant, metadata + full text into Postgres.
 2. **Agentic query** — user asks a question → a LangGraph agent runs a tool-calling loop against
-   the active LLM provider, choosing from `retrieve_chunks` (hybrid search + Cohere Rerank),
-   `compare_regulations`, `generate_action_items`, `summarize_regulation` → every claim is
-   grounded in retrieved chunks and cited back to its source clause/page.
+   the active LLM provider, choosing from `retrieve_chunks`, `compare_regulations`,
+   `generate_action_items`, `summarize_regulation` → every claim is grounded in retrieved
+   chunks and cited back to its source clause/page.
+
+**Retrieval (`retrieve_chunks`)** — dense (OpenAI embeddings) and sparse (BM25, via a
+`fastembed` sparse vector in the same Qdrant collection) search run together and are fused with
+Qdrant's native RRF, then the fused candidates are reranked with Cohere Rerank (a cross-encoder)
+for a final precision pass. Deliberately *not* included yet: HyDE (hypothetical-document query
+expansion) — dense+sparse+RRF+rerank is already a strong baseline, and HyDE adds an LLM call
+(cost + latency) to every query. It's a candidate to add later, driven by what the Phase 9
+Ragas evals show is actually missing, not added speculatively now.
 
 **Multi-provider LLM layer** — one `LLMProvider` port, `AnthropicProvider` and `OpenAIProvider`
 adapters behind it, selected via config with a fallback chain. The point isn't "support two
@@ -127,7 +135,8 @@ Built incrementally, one phase per commit/PR — see commit history for progress
 - [ ] **Phase 3** — Document ingestion pipeline: parsing, chunking, OpenAI embeddings,
       NeMo Guardrails input screening
 - [ ] **Phase 4** — LLM provider abstraction (Anthropic + OpenAI, fallback router)
-- [ ] **Phase 5** — Retrieval: hybrid search + Cohere Rerank + citation grounding
+- [ ] **Phase 5** — Retrieval: dense + BM25 sparse search fused with RRF, Cohere Rerank,
+      citation grounding (HyDE deliberately deferred — see Architecture)
 - [ ] **Phase 6** — Agent orchestrator: LangGraph tool-calling loop
 - [ ] **Phase 7** — FastAPI endpoints + JWT auth/RBAC + NeMo Guardrails output validation
 - [ ] **Phase 8** — Streamlit UI: upload, chat, comparison, action-item dashboard
