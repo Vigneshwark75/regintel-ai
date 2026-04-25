@@ -14,8 +14,13 @@ class Settings(BaseSettings):
     api_port: int = 8000
 
     postgres_dsn: str = "postgresql+psycopg://regintel:regintel@localhost:5432/regintel"
+
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "regintel_chunks"
+    # text-embedding-3-large defaults to 3072 dims; OpenAI's `dimensions` param lets us
+    # shorten it with minimal quality loss — halves Qdrant storage/query cost.
+    embedding_model: str = "text-embedding-3-large"
+    embedding_dimensions: int = 1536
 
     anthropic_api_key: str | None = None
     openai_api_key: str | None = None

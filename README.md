@@ -109,6 +109,9 @@ make sync
 # Start Postgres + Qdrant
 make infra-up
 
+# Apply database migrations
+make migrate
+
 # In separate terminals
 make run-api   # http://localhost:8000
 make run-ui    # http://localhost:8501
@@ -119,11 +122,17 @@ Copy `.env.example` to `.env` and fill in API keys before Phase 4 (LLM integrati
 ## Development
 
 ```bash
-make lint        # ruff
-make format       # black + ruff --fix
-make typecheck     # mypy --strict
-make test           # pytest
+make lint               # ruff
+make format               # black + ruff --fix
+make typecheck             # mypy --strict
+make test                   # pytest, excluding integration tests
+make test-integration        # pytest, integration only — needs `make infra-up` first
 ```
+
+Integration tests (`packages/infrastructure/tests/`) run against the real Postgres/Qdrant
+containers rather than mocks — a schema or query-shape bug should fail here, not in
+production. They're marked `@pytest.mark.integration` and excluded from the default `make
+test` run so the fast feedback loop never needs Docker running.
 
 ## Roadmap
 
@@ -131,7 +140,7 @@ Built incrementally, one phase per commit/PR — see commit history for progress
 
 - [x] **Phase 0** — Repo scaffold: uv workspace, tooling, Docker Compose skeleton
 - [x] **Phase 1** — Domain layer: entities, value objects, unit tests
-- [ ] **Phase 2** — Infrastructure: Postgres models + Alembic, Qdrant client wrapper
+- [x] **Phase 2** — Infrastructure: Postgres models + Alembic, Qdrant client wrapper
 - [ ] **Phase 3** — Document ingestion pipeline: parsing, chunking, OpenAI embeddings,
       NeMo Guardrails input screening
 - [ ] **Phase 4** — LLM provider abstraction (Anthropic + OpenAI, fallback router)

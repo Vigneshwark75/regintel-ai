@@ -1,7 +1,12 @@
 from fastapi import FastAPI
 
+from regintel_shared.asyncio_compat import ensure_windows_selector_event_loop
 from regintel_shared.config import get_settings
 from regintel_shared.logging import configure_logging, get_logger
+
+# Must run before uvicorn creates its event loop, regardless of whether this
+# module is launched via `python -m`, the uvicorn CLI, or programmatically.
+ensure_windows_selector_event_loop()
 
 settings = get_settings()
 configure_logging(settings.log_level)

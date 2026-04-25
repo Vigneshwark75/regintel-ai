@@ -1,4 +1,4 @@
-.PHONY: sync lint format typecheck test run-api run-ui infra-up infra-down
+.PHONY: sync lint format typecheck test test-integration run-api run-ui infra-up infra-down migrate
 
 sync:
 	uv sync --all-packages
@@ -14,7 +14,10 @@ typecheck:
 	uv run mypy packages apps
 
 test:
-	uv run pytest
+	uv run pytest -m "not integration"
+
+test-integration:
+	uv run pytest -m integration
 
 run-api:
 	uv run --package regintel-api uvicorn api.main:app --app-dir apps/api/src --reload
@@ -27,3 +30,6 @@ infra-up:
 
 infra-down:
 	docker compose -f deployment/docker-compose.yml down
+
+migrate:
+	cd packages/infrastructure && uv run --project ../.. --package regintel-infrastructure alembic upgrade head
