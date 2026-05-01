@@ -141,13 +141,15 @@ Built incrementally, one phase per commit/PR — see commit history for progress
 - [x] **Phase 0** — Repo scaffold: uv workspace, tooling, Docker Compose skeleton
 - [x] **Phase 1** — Domain layer: entities, value objects, unit tests
 - [x] **Phase 2** — Infrastructure: Postgres models + Alembic, Qdrant client wrapper
-- [ ] **Phase 3** — Document ingestion pipeline: parsing, chunking, OpenAI embeddings,
-      NeMo Guardrails input screening
+- [x] **Phase 3** — Document ingestion pipeline: parsing, regulation-aware chunking, OpenAI
+      dense + BM25 sparse embeddings
 - [ ] **Phase 4** — LLM provider abstraction (Anthropic + OpenAI, fallback router)
 - [ ] **Phase 5** — Retrieval: dense + BM25 sparse search fused with RRF, Cohere Rerank,
       citation grounding (HyDE deliberately deferred — see Architecture)
 - [ ] **Phase 6** — Agent orchestrator: LangGraph tool-calling loop
-- [ ] **Phase 7** — FastAPI endpoints + JWT auth/RBAC + NeMo Guardrails output validation
+- [ ] **Phase 7** — FastAPI endpoints + JWT auth/RBAC + NeMo Guardrails (input *and* output
+      rails together — deferred from Phase 3 since NeMo's rails engine needs an LLM to run
+      its checks, which doesn't exist until Phase 4; one combined config beats two partial ones)
 - [ ] **Phase 8** — Streamlit UI: upload, chat, comparison, action-item dashboard
 - [ ] **Phase 9** — Opik observability/prompt management + Ragas eval set
 - [ ] **Phase 10** — CI, deployment polish, docs
