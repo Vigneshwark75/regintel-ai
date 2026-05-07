@@ -37,8 +37,8 @@ regintel-ai/
 │   ├── application/         Use cases (IngestDocument, AskQuestion, CompareRegulations,
 │   │                       GenerateActionItems, SummarizeRegulation) + ports (interfaces):
 │   │                       LLMProvider, VectorStore, DocumentRepository, EmbeddingProvider
-│   ├── infrastructure/      Adapters implementing those ports: AnthropicProvider,
-│   │                       OpenAIProvider, QdrantVectorStore, PostgresDocumentRepository,
+│   ├── infrastructure/      Adapters implementing those ports: GroqProvider,
+│   │                       QdrantVectorStore, PostgresDocumentRepository,
 │   │                       PDF/DOCX parsers, regulation-aware chunker
 │   └── shared/               Config, logging, exceptions — the shared kernel
 ├── deployment/              Docker Compose (Postgres, Qdrant, and later the apps)
@@ -48,23 +48,27 @@ regintel-ai/
 **Two core flows:**
 
 1. **Ingestion** — upload PDF/DOCX → parse → chunk (clause/section-aware) → embed
-   (OpenAI `text-embedding-3-large`) → vectors into Qdrant, metadata + full text into Postgres.
+   (local `fastembed` model) → vectors into Qdrant, metadata + full text into Postgres.
 2. **Agentic query** — user asks a question → a LangGraph agent runs a tool-calling loop against
-   the active LLM provider, choosing from `retrieve_chunks`, `compare_regulations`,
+   Groq (Llama models), choosing from `retrieve_chunks`, `compare_regulations`,
    `generate_action_items`, `summarize_regulation` → every claim is grounded in retrieved
    chunks and cited back to its source clause/page.
 
-**Retrieval (`retrieve_chunks`)** — dense (OpenAI embeddings) and sparse (BM25, via a
-`fastembed` sparse vector in the same Qdrant collection) search run together and are fused with
-Qdrant's native RRF, then the fused candidates are reranked with Cohere Rerank (a cross-encoder)
-for a final precision pass. Deliberately *not* included yet: HyDE (hypothetical-document query
-expansion) — dense+sparse+RRF+rerank is already a strong baseline, and HyDE adds an LLM call
-(cost + latency) to every query. It's a candidate to add later, driven by what the Phase 9
-Ragas evals show is actually missing, not added speculatively now.
+**Retrieval (`retrieve_chunks`)** — dense and sparse (BM25) search run together, both via local
+`fastembed` models in the same Qdrant collection, and are fused with Qdrant's native RRF, then
+the fused candidates are reranked with a local cross-encoder for a final precision pass.
+Deliberately *not* included yet: HyDE (hypothetical-document query expansion) — dense+sparse+
+RRF+rerank is already a strong baseline, and HyDE adds an LLM call (cost + latency) to every
+query. It's a candidate to add later, driven by what the Phase 9 Ragas evals show is actually
+missing, not added speculatively now.
 
-**Multi-provider LLM layer** — one `LLMProvider` port, `AnthropicProvider` and `OpenAIProvider`
-adapters behind it, selected via config with a fallback chain. The point isn't "support two
-SDKs," it's a system that keeps working if one vendor is rate-limited or down.
+**Zero-cost by design** — every external-API dependency in this stack was deliberately chosen
+to have a free path: Groq's free tier for the LLM, local `fastembed` models for both dense and
+sparse embeddings, a local cross-encoder for reranking. Anyone can clone this repo, grab a free
+Groq API key, and run the whole thing without paying for or licensing anything. The
+`LLMProvider`/`EmbeddingProvider` ports still make it a contained change to swap in
+Anthropic/OpenAI/Cohere later if higher quality is worth the cost — the abstraction doesn't
+disappear just because there's currently one adapter behind each port.
 
 **Guardrails** — NeMo Guardrails around both directions: ingested documents are screened for
 prompt-injection patterns before they ever reach the LLM context, and agent outputs are
@@ -89,9 +93,9 @@ compliance system needs to keep regardless.
 | Frontend | Streamlit |
 | Vector store | Qdrant |
 | Relational store | PostgreSQL |
-| LLM | Anthropic Claude + OpenAI, behind a shared provider abstraction |
-| Embeddings | OpenAI `text-embedding-3-large` |
-| Reranker | Cohere Rerank |
+| LLM | Groq (Llama models), OpenAI-compatible API, behind an `LLMProvider` port |
+| Embeddings | Local `fastembed` — `BAAI/bge-small-en-v1.5` (dense) + BM25 (sparse), no API key |
+| Reranker | Local cross-encoder, no API key |
 | Agent orchestration | LangGraph |
 | Guardrails | NeMo Guardrails (input injection screening + output validation) |
 | Observability & prompt management | Opik |
@@ -117,7 +121,9 @@ make run-api   # http://localhost:8000
 make run-ui    # http://localhost:8501
 ```
 
-Copy `.env.example` to `.env` and fill in API keys before Phase 4 (LLM integration) lands.
+Copy `.env.example` to `.env`. A free `GROQ_API_KEY` from [console.groq.com](https://console.groq.com)
+is the only credential needed once Phase 4 (LLM integration) lands — embeddings and reranking
+run entirely locally, no key required.
 
 ## Development
 
@@ -141,11 +147,15 @@ Built incrementally, one phase per commit/PR — see commit history for progress
 - [x] **Phase 0** — Repo scaffold: uv workspace, tooling, Docker Compose skeleton
 - [x] **Phase 1** — Domain layer: entities, value objects, unit tests
 - [x] **Phase 2** — Infrastructure: Postgres models + Alembic, Qdrant client wrapper
-- [x] **Phase 3** — Document ingestion pipeline: parsing, regulation-aware chunking, OpenAI
-      dense + BM25 sparse embeddings
-- [ ] **Phase 4** — LLM provider abstraction (Anthropic + OpenAI, fallback router)
-- [ ] **Phase 5** — Retrieval: dense + BM25 sparse search fused with RRF, Cohere Rerank,
-      citation grounding (HyDE deliberately deferred — see Architecture)
+- [x] **Phase 3** — Document ingestion pipeline: parsing, regulation-aware chunking, local
+      dense (`fastembed`) + BM25 sparse embeddings — switched from OpenAI embeddings after
+      Phase 3 shipped, once the goal became sharing this app without any paid API key (see
+      Phase 4 note)
+- [ ] **Phase 4** — LLM provider abstraction: Groq (Llama models via an OpenAI-compatible,
+      free-tier API) — chosen over the original Anthropic+OpenAI multi-provider plan
+      specifically so the app can be cloned and run by anyone with zero paid API keys
+- [ ] **Phase 5** — Retrieval: dense + BM25 sparse search fused with RRF, local cross-encoder
+      rerank, citation grounding (HyDE deliberately deferred — see Architecture)
 - [ ] **Phase 6** — Agent orchestrator: LangGraph tool-calling loop
 - [ ] **Phase 7** — FastAPI endpoints + JWT auth/RBAC + NeMo Guardrails (input *and* output
       rails together — deferred from Phase 3 since NeMo's rails engine needs an LLM to run

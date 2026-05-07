@@ -17,14 +17,18 @@ class Settings(BaseSettings):
 
     qdrant_url: str = "http://localhost:6333"
     qdrant_collection: str = "regintel_chunks"
-    # text-embedding-3-large defaults to 3072 dims; OpenAI's `dimensions` param lets us
-    # shorten it with minimal quality loss — halves Qdrant storage/query cost.
-    embedding_model: str = "text-embedding-3-large"
-    embedding_dimensions: int = 1536
+    # Local fastembed model — no API key, zero cost, so cloning this repo needs no
+    # embedding provider signup. 384 dims is bge-small's native output size.
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_dimensions: int = 384
 
-    anthropic_api_key: str | None = None
-    openai_api_key: str | None = None
-    llm_provider: Literal["anthropic", "openai"] = "anthropic"
+    # Groq serves open-weight Llama models via a fast, free-tier, OpenAI-compatible
+    # API — chosen specifically so this app can be shared without any paid API key.
+    # Confirm current model availability at console.groq.com before relying on the
+    # default below; Groq's hosted lineup changes over time.
+    groq_api_key: str | None = None
+    groq_base_url: str = "https://api.groq.com/openai/v1"
+    llm_model: str = "llama-3.3-70b-versatile"
 
     jwt_secret: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"

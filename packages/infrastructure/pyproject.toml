@@ -13,8 +13,8 @@ dependencies = [
     "qdrant-client>=1.12.1",
     "pypdf>=5.1.0",
     "python-docx>=1.1.2",
-    "openai>=1.54.0",
     "fastembed>=0.4.2",
+    "groq>=0.13.0",
 ]
 
 [tool.uv.sources]

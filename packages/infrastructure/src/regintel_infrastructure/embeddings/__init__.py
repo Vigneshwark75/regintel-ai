@@ -1,4 +1,4 @@
 from regintel_infrastructure.embeddings.bm25_sparse_provider import Bm25SparseEmbeddingProvider
-from regintel_infrastructure.embeddings.openai_embedding_provider import OpenAIEmbeddingProvider
+from regintel_infrastructure.embeddings.local_dense_provider import LocalDenseEmbeddingProvider
 
-__all__ = ["Bm25SparseEmbeddingProvider", "OpenAIEmbeddingProvider"]
+__all__ = ["Bm25SparseEmbeddingProvider", "LocalDenseEmbeddingProvider"]
