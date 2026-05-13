@@ -22,12 +22,11 @@ class Settings(BaseSettings):
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_dimensions: int = 384
 
-    # Groq serves open-weight Llama models via a fast, free-tier, OpenAI-compatible
-    # API — chosen specifically so this app can be shared without any paid API key.
-    # Confirm current model availability at console.groq.com before relying on the
-    # default below; Groq's hosted lineup changes over time.
+    # Groq serves open-weight Llama models via a fast, free-tier API — chosen
+    # specifically so this app can be shared without any paid API key. The `groq`
+    # SDK already points at Groq's endpoint by default, no base_url needed. Confirm
+    # current model availability at console.groq.com; Groq's hosted lineup changes.
     groq_api_key: str | None = None
-    groq_base_url: str = "https://api.groq.com/openai/v1"
     llm_model: str = "llama-3.3-70b-versatile"
 
     jwt_secret: str = "change-me-in-production"

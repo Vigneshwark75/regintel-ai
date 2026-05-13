@@ -93,7 +93,7 @@ compliance system needs to keep regardless.
 | Frontend | Streamlit |
 | Vector store | Qdrant |
 | Relational store | PostgreSQL |
-| LLM | Groq (Llama models), OpenAI-compatible API, behind an `LLMProvider` port |
+| LLM | Groq (Llama models) via the `groq` SDK, behind an `LLMProvider` port |
 | Embeddings | Local `fastembed` — `BAAI/bge-small-en-v1.5` (dense) + BM25 (sparse), no API key |
 | Reranker | Local cross-encoder, no API key |
 | Agent orchestration | LangGraph |
@@ -151,9 +151,11 @@ Built incrementally, one phase per commit/PR — see commit history for progress
       dense (`fastembed`) + BM25 sparse embeddings — switched from OpenAI embeddings after
       Phase 3 shipped, once the goal became sharing this app without any paid API key (see
       Phase 4 note)
-- [ ] **Phase 4** — LLM provider abstraction: Groq (Llama models via an OpenAI-compatible,
-      free-tier API) — chosen over the original Anthropic+OpenAI multi-provider plan
-      specifically so the app can be cloned and run by anyone with zero paid API keys
+- [x] **Phase 4** — LLM provider abstraction: `LLMProvider` port (with tool-calling built into
+      its shape from the start, for Phase 6) + GroqProvider adapter, free-tier Llama models —
+      chosen over the original Anthropic+OpenAI multi-provider plan specifically so the app can
+      be cloned and run by anyone with zero paid API keys. Verified against the real API,
+      including a full tool-call round trip
 - [ ] **Phase 5** — Retrieval: dense + BM25 sparse search fused with RRF, local cross-encoder
       rerank, citation grounding (HyDE deliberately deferred — see Architecture)
 - [ ] **Phase 6** — Agent orchestrator: LangGraph tool-calling loop

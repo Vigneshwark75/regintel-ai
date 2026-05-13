@@ -1,10 +1,12 @@
 from collections.abc import AsyncIterator
 
 import pytest_asyncio
+from groq import AsyncGroq
 from qdrant_client import AsyncQdrantClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from regintel_infrastructure.db.base import create_engine, create_session_factory
+from regintel_infrastructure.llm.groq_provider import GroqProvider
 from regintel_shared.asyncio_compat import ensure_windows_selector_event_loop
 from regintel_shared.config import get_settings
 
@@ -30,5 +32,16 @@ async def qdrant_client() -> AsyncIterator[AsyncQdrantClient]:
     client = AsyncQdrantClient(url=settings.qdrant_url)
 
     yield client
+
+    await client.close()
+
+
+@pytest_asyncio.fixture
+async def groq_provider() -> AsyncIterator[GroqProvider]:
+    settings = get_settings()
+    assert settings.groq_api_key, "GROQ_API_KEY must be set in .env to run Groq integration tests"
+    client = AsyncGroq(api_key=settings.groq_api_key)
+
+    yield GroqProvider(client=client, model=settings.llm_model)
 
     await client.close()
