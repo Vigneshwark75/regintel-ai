@@ -75,3 +75,9 @@ class PostgresDocumentRepository:
             .order_by(ChunkModel.chunk_index)
         )
         return [_model_to_chunk(model) for model in result.scalars().all()]
+
+    async def get_chunks_by_ids(self, chunk_ids: list[UUID]) -> list[Chunk]:
+        if not chunk_ids:
+            return []
+        result = await self._session.execute(select(ChunkModel).where(ChunkModel.id.in_(chunk_ids)))
+        return [_model_to_chunk(model) for model in result.scalars().all()]

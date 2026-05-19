@@ -156,8 +156,10 @@ Built incrementally, one phase per commit/PR — see commit history for progress
       chosen over the original Anthropic+OpenAI multi-provider plan specifically so the app can
       be cloned and run by anyone with zero paid API keys. Verified against the real API,
       including a full tool-call round trip
-- [ ] **Phase 5** — Retrieval: dense + BM25 sparse search fused with RRF, local cross-encoder
-      rerank, citation grounding (HyDE deliberately deferred — see Architecture)
+- [x] **Phase 5** — Retrieval: `RetrieveChunksUseCase` — hybrid dense+BM25 search fused with
+      RRF (Phase 2), local cross-encoder rerank, citation grounding. Proven end-to-end with a
+      real ingest-then-retrieve integration test against live Postgres + Qdrant, not just unit
+      tests with fakes (HyDE deliberately deferred — see Architecture)
 - [ ] **Phase 6** — Agent orchestrator: LangGraph tool-calling loop
 - [ ] **Phase 7** — FastAPI endpoints + JWT auth/RBAC + NeMo Guardrails (input *and* output
       rails together — deferred from Phase 3 since NeMo's rails engine needs an LLM to run

@@ -51,3 +51,25 @@ async def test_chunks_are_returned_ordered_by_index(db_session) -> None:  # type
     fetched = await repo.get_chunks_by_document(document.id)
 
     assert [chunk.content for chunk in fetched] == ["first", "second"]
+
+
+async def test_get_chunks_by_ids_returns_only_the_requested_chunks(db_session) -> None:  # type: ignore[no-untyped-def]
+    repo = PostgresDocumentRepository(db_session)
+    document = make_document()
+    await repo.save_document(document)
+
+    chunks = [
+        Chunk(id=uuid4(), document_id=document.id, content="wanted", chunk_index=0),
+        Chunk(id=uuid4(), document_id=document.id, content="not wanted", chunk_index=1),
+    ]
+    await repo.save_chunks(chunks)
+
+    fetched = await repo.get_chunks_by_ids([chunks[0].id])
+
+    assert [chunk.content for chunk in fetched] == ["wanted"]
+
+
+async def test_get_chunks_by_ids_returns_empty_list_for_empty_input(db_session) -> None:  # type: ignore[no-untyped-def]
+    repo = PostgresDocumentRepository(db_session)
+
+    assert await repo.get_chunks_by_ids([]) == []
