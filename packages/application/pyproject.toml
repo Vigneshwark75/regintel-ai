@@ -1,10 +1,11 @@
 [project]
 name = "regintel-application"
 version = "0.1.0"
-description = "RegIntel AI — application layer: use cases and ports (interfaces). Depends only on the domain layer."
+description = "RegIntel AI — application layer: use cases, ports (interfaces), and the agent orchestrator. Depends on domain plus LangGraph for graph-based orchestration — no vendor SDKs, those stay in infrastructure behind the ports."
 requires-python = ">=3.11"
 dependencies = [
     "regintel-domain",
+    "langgraph>=0.2.45",
 ]
 
 [tool.uv.sources]

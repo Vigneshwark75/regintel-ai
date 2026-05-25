@@ -160,7 +160,15 @@ Built incrementally, one phase per commit/PR — see commit history for progress
       RRF (Phase 2), local cross-encoder rerank, citation grounding. Proven end-to-end with a
       real ingest-then-retrieve integration test against live Postgres + Qdrant, not just unit
       tests with fakes (HyDE deliberately deferred — see Architecture)
-- [ ] **Phase 6** — Agent orchestrator: LangGraph tool-calling loop
+- [x] **Phase 6** — Agent orchestrator: a hand-built LangGraph tool-calling loop over our own
+      `LLMProvider` port (not LangChain's model wrappers, not `langgraph`'s prebuilt ReAct
+      agent — vendor specifics stay behind our port). All four tools are real: `retrieve_chunks`,
+      `summarize_regulation`, `compare_regulations`, `generate_action_items` (which grounds each
+      generated item to specific citation indices, not the whole retrieved set — exercising the
+      domain layer's "an ActionItem needs >=1 citation" invariant for real). Verified end-to-end:
+      ingest a document, ask the live agent a question, get back a grounded, cited answer. A real
+      run also surfaced Groq/Llama's occasional malformed tool-call output
+      (`tool_use_failed`) — fixed with a bounded retry plus `temperature=0`, not papered over
 - [ ] **Phase 7** — FastAPI endpoints + JWT auth/RBAC + NeMo Guardrails (input *and* output
       rails together — deferred from Phase 3 since NeMo's rails engine needs an LLM to run
       its checks, which doesn't exist until Phase 4; one combined config beats two partial ones)
