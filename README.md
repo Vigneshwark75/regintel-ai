@@ -97,6 +97,7 @@ compliance system needs to keep regardless.
 | Embeddings | Local `fastembed` — `BAAI/bge-small-en-v1.5` (dense) + BM25 (sparse), no API key |
 | Reranker | Local cross-encoder, no API key |
 | Agent orchestration | LangGraph |
+| Auth | JWT (PyJWT), OAuth2 password flow, role-based access control |
 | Guardrails | NeMo Guardrails (input injection screening + output validation) |
 | Observability & prompt management | Opik |
 | Evals | Ragas (faithfulness, context precision/recall, answer relevancy) |
@@ -122,8 +123,44 @@ make run-ui    # http://localhost:8501
 ```
 
 Copy `.env.example` to `.env`. A free `GROQ_API_KEY` from [console.groq.com](https://console.groq.com)
-is the only credential needed once Phase 4 (LLM integration) lands — embeddings and reranking
-run entirely locally, no key required.
+is the only credential needed — embeddings and reranking run entirely locally, no key required.
+
+### Trying the API
+
+The API ships with a demo in-memory user per role (see `api/auth.py` — a real deployment
+swaps this for an identity provider; nothing downstream changes since everything only cares
+about the `(username, role)` pair a login produces):
+
+| Username | Password | Role |
+|---|---|---|
+| `cro` | `cro-demo-password` | CRO |
+| `compliance` | `compliance-demo-password` | Compliance Officer |
+| `risk` | `risk-demo-password` | Risk |
+| `auditor` | `auditor-demo-password` | Auditor |
+| `ops` | `ops-demo-password` | Ops |
+
+```bash
+# Log in (OAuth2 password flow — also works via the "Authorize" button at /docs)
+curl -X POST http://localhost:8000/auth/token \
+  -d "username=compliance&password=compliance-demo-password"
+
+# Upload a document (CRO/Compliance Officer only)
+curl -X POST http://localhost:8000/documents \
+  -H "Authorization: Bearer <token>" \
+  -F "file=@kyc_direction.docx" \
+  -F "title=Master Direction on KYC" \
+  -F "document_type=master_direction" \
+  -F "reference_number=RBI/DBR/2016-17/18" \
+  -F "issued_date=2016-02-25"
+
+# Ask a grounded question (any authenticated role)
+curl -X POST http://localhost:8000/ask \
+  -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{"question": "How long must customer due diligence records be retained?"}'
+```
+
+Interactive docs (with the "Authorize" button pre-wired to `/auth/token`) are at
+`http://localhost:8000/docs`.
 
 ## Development
 
@@ -169,9 +206,14 @@ Built incrementally, one phase per commit/PR — see commit history for progress
       ingest a document, ask the live agent a question, get back a grounded, cited answer. A real
       run also surfaced Groq/Llama's occasional malformed tool-call output
       (`tool_use_failed`) — fixed with a bounded retry plus `temperature=0`, not papered over
-- [ ] **Phase 7** — FastAPI endpoints + JWT auth/RBAC + NeMo Guardrails (input *and* output
-      rails together — deferred from Phase 3 since NeMo's rails engine needs an LLM to run
-      its checks, which doesn't exist until Phase 4; one combined config beats two partial ones)
+- [x] **Phase 7a** — FastAPI endpoints + JWT auth/RBAC: `/auth/token`, `/documents` (upload,
+      summarize, compare), `/ask`, `/action-items`, all wired to real Postgres/Qdrant/Groq
+      through a composition root in `api/dependencies.py`. A real end-to-end test (login →
+      upload → ask, over real HTTP) caught a genuine bug: the DB session dependency never
+      committed, so every write silently rolled back on session close while Qdrant's write
+      went through unconditionally — fixed by reusing the `session_scope()` helper Phase 2's
+      own tests already relied on, instead of the subtly-different one written for the API
+- [ ] **Phase 7b** — NeMo Guardrails (input *and* output rails together — one combined config)
 - [ ] **Phase 8** — Streamlit UI: upload, chat, comparison, action-item dashboard
 - [ ] **Phase 9** — Opik observability/prompt management + Ragas eval set
 - [ ] **Phase 10** — CI, deployment polish, docs

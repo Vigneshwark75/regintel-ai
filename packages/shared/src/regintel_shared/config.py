@@ -29,7 +29,10 @@ class Settings(BaseSettings):
     groq_api_key: str | None = None
     llm_model: str = "llama-3.3-70b-versatile"
 
-    jwt_secret: str = "change-me-in-production"
+    # HS256 wants >=32 bytes (RFC 7518 §3.2) — this default is long enough to avoid
+    # PyJWT's InsecureKeyLengthWarning even as a placeholder; still MUST be replaced
+    # for anything beyond local dev (see .env.example: `openssl rand -hex 32`).
+    jwt_secret: str = "change-me-in-production-this-default-is-not-a-real-secret"
     jwt_algorithm: str = "HS256"
     jwt_expiry_minutes: int = 60
 
