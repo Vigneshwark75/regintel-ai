@@ -1,11 +1,13 @@
 from collections.abc import AsyncIterator
 
+import pytest
 import pytest_asyncio
 from groq import AsyncGroq
 from qdrant_client import AsyncQdrantClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from regintel_infrastructure.db.base import create_engine, create_session_factory
+from regintel_infrastructure.guardrails.nemo_guardrails_service import NeMoGuardrailsService
 from regintel_infrastructure.llm.groq_provider import GroqProvider
 from regintel_shared.asyncio_compat import ensure_windows_selector_event_loop
 from regintel_shared.config import get_settings
@@ -45,3 +47,8 @@ async def groq_provider() -> AsyncIterator[GroqProvider]:
     yield GroqProvider(client=client, model=settings.llm_model)
 
     await client.close()
+
+
+@pytest.fixture
+def guardrails() -> NeMoGuardrailsService:
+    return NeMoGuardrailsService()

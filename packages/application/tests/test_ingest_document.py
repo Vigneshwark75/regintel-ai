@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from regintel_application.ports.guardrails import GuardrailResult
 from regintel_application.ports.vector_store import SparseVector, VectorEntry
 from regintel_application.use_cases.ingest_document import IngestDocumentUseCase
 from regintel_domain import Chunk, Document, DocumentType
@@ -57,6 +58,19 @@ class FakeSparseEmbeddingProvider:
         return [SparseVector(indices=[0], values=[float(len(text))]) for text in texts]
 
 
+@dataclass
+class FakeGuardrails:
+    blocked_texts: frozenset[str] = frozenset()
+
+    async def check_input(self, text: str) -> GuardrailResult:
+        if text in self.blocked_texts:
+            return GuardrailResult(allowed=False, reason="matched a blocked test pattern")
+        return GuardrailResult(allowed=True)
+
+    async def check_output(self, text: str) -> GuardrailResult:
+        return GuardrailResult(allowed=True)
+
+
 def make_document() -> Document:
     return Document(
         id=uuid4(),
@@ -81,6 +95,7 @@ async def test_ingest_persists_document_and_chunks() -> None:
         vector_store=FakeVectorStore(),
         embedding_provider=FakeEmbeddingProvider(),
         sparse_embedding_provider=FakeSparseEmbeddingProvider(),
+        guardrails=FakeGuardrails(),
     )
     document = make_document()
     chunks = make_chunks(document.id)
@@ -98,6 +113,7 @@ async def test_ingest_upserts_one_vector_entry_per_chunk() -> None:
         vector_store=vector_store,
         embedding_provider=FakeEmbeddingProvider(),
         sparse_embedding_provider=FakeSparseEmbeddingProvider(),
+        guardrails=FakeGuardrails(),
     )
     document = make_document()
     chunks = make_chunks(document.id, count=3)
@@ -113,7 +129,29 @@ async def test_ingest_rejects_a_document_with_no_chunks() -> None:
         vector_store=FakeVectorStore(),
         embedding_provider=FakeEmbeddingProvider(),
         sparse_embedding_provider=FakeSparseEmbeddingProvider(),
+        guardrails=FakeGuardrails(),
     )
 
     with pytest.raises(ValueError, match="at least one chunk"):
         await use_case.execute(make_document(), [])
+
+
+async def test_ingest_rejects_a_document_whose_chunk_fails_the_input_guardrail() -> None:
+    document_repository = FakeDocumentRepository()
+    vector_store = FakeVectorStore()
+    document = make_document()
+    blocked_content = "clause 0 text"
+    chunks = make_chunks(document.id)  # chunk 0 content is "clause 0 text"
+    use_case = IngestDocumentUseCase(
+        document_repository=document_repository,
+        vector_store=vector_store,
+        embedding_provider=FakeEmbeddingProvider(),
+        sparse_embedding_provider=FakeSparseEmbeddingProvider(),
+        guardrails=FakeGuardrails(blocked_texts=frozenset({blocked_content})),
+    )
+
+    with pytest.raises(ValueError, match="input guardrail rejected"):
+        await use_case.execute(document, chunks)
+
+    assert document.id not in document_repository.documents
+    assert vector_store.upserted == []

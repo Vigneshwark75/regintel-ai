@@ -17,6 +17,7 @@ from regintel_infrastructure.db.base import create_engine, create_session_factor
 from regintel_infrastructure.db.document_repository import PostgresDocumentRepository
 from regintel_infrastructure.embeddings.bm25_sparse_provider import Bm25SparseEmbeddingProvider
 from regintel_infrastructure.embeddings.local_dense_provider import LocalDenseEmbeddingProvider
+from regintel_infrastructure.guardrails.nemo_guardrails_service import NeMoGuardrailsService
 from regintel_infrastructure.llm.groq_provider import GroqProvider
 from regintel_infrastructure.reranking.local_cross_encoder_reranker import LocalCrossEncoderReranker
 from regintel_infrastructure.vector_store.qdrant_store import QdrantVectorStore
@@ -91,6 +92,11 @@ def get_llm_provider() -> GroqProvider:
     return GroqProvider(client=get_groq_client(), model=get_settings().llm_model)
 
 
+@lru_cache
+def get_guardrails() -> NeMoGuardrailsService:
+    return NeMoGuardrailsService()
+
+
 def get_document_repository(
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> PostgresDocumentRepository:
@@ -105,6 +111,7 @@ def get_ingest_document_use_case(
         vector_store=get_vector_store(),
         embedding_provider=get_dense_embedding_provider(),
         sparse_embedding_provider=get_sparse_embedding_provider(),
+        guardrails=get_guardrails(),
     )
 
 
@@ -162,4 +169,5 @@ def get_compliance_agent(
         summarize_regulation=summarize_regulation,
         compare_regulations=compare_regulations,
         generate_action_items=generate_action_items,
+        guardrails=get_guardrails(),
     )

@@ -5,12 +5,19 @@ from uuid import UUID
 from langgraph.graph import END, StateGraph
 
 from regintel_application.agent.tools import ALL_TOOLS
+from regintel_application.ports.guardrails import Guardrails
 from regintel_application.ports.llm_provider import LLMMessage, LLMProvider, ToolCall
 from regintel_application.use_cases.compare_regulations import CompareRegulationsUseCase
 from regintel_application.use_cases.generate_action_items import GenerateActionItemsUseCase
 from regintel_application.use_cases.retrieve_chunks import RetrieveChunksUseCase
 from regintel_application.use_cases.summarize_regulation import SummarizeRegulationUseCase
 from regintel_domain import Citation, UserRole
+
+_INPUT_BLOCKED_MESSAGE = "I can't process that request — it was flagged by an input safety check."
+_OUTPUT_BLOCKED_MESSAGE = (
+    "I generated a response, but it was withheld by an output safety check. "
+    "Please rephrase your question."
+)
 
 _SYSTEM_PROMPT = (
     "You are RegIntel AI, a compliance assistant for banks and NBFCs. Answer questions "
@@ -46,6 +53,7 @@ class ComplianceAgent:
     summarize_regulation: SummarizeRegulationUseCase
     compare_regulations: CompareRegulationsUseCase
     generate_action_items: GenerateActionItemsUseCase
+    guardrails: Guardrails
 
     def __post_init__(self) -> None:
         self._graph = self._build_graph()
@@ -123,6 +131,10 @@ class ComplianceAgent:
         return f"Unknown tool: {call.name}", []
 
     async def ask(self, question: str) -> tuple[str, list[Citation]]:
+        input_check = await self.guardrails.check_input(question)
+        if not input_check.allowed:
+            return _INPUT_BLOCKED_MESSAGE, []
+
         initial_state: AgentState = {
             "messages": [
                 LLMMessage(role="system", content=_SYSTEM_PROMPT),
@@ -132,4 +144,10 @@ class ComplianceAgent:
             "iterations": 0,
         }
         final_state: AgentState = await self._graph.ainvoke(initial_state)
-        return final_state["messages"][-1].content, final_state["citations"]
+        answer = final_state["messages"][-1].content
+
+        output_check = await self.guardrails.check_output(answer)
+        if not output_check.allowed:
+            return _OUTPUT_BLOCKED_MESSAGE, []
+
+        return answer, final_state["citations"]

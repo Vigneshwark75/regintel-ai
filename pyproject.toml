@@ -72,6 +72,13 @@ warn_unused_ignores = true
 disallow_untyped_defs = true
 exclude = ["tests/", "migrations/versions"]
 
+# nemoguardrails ships no py.typed marker / stubs. We only touch its public
+# RailsConfig/LLMRails/GenerationOptions API in one adapter module; ignoring
+# missing imports there is narrower than disabling strictness project-wide.
+[[tool.mypy.overrides]]
+module = "nemoguardrails.*"
+ignore_missing_imports = true
+
 # --------------------------------------------------------------------------
 # Pytest
 # --------------------------------------------------------------------------

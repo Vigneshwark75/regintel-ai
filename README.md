@@ -70,9 +70,13 @@ Groq API key, and run the whole thing without paying for or licensing anything. 
 Anthropic/OpenAI/Cohere later if higher quality is worth the cost — the abstraction doesn't
 disappear just because there's currently one adapter behind each port.
 
-**Guardrails** — NeMo Guardrails around both directions: ingested documents are screened for
-prompt-injection patterns before they ever reach the LLM context, and agent outputs are
-validated against structured schemas before being returned to a user.
+**Guardrails** — NeMo Guardrails around both directions, via a `Guardrails` port so the engine
+itself is swappable: every ingested chunk is screened for prompt-injection/jailbreak patterns
+before it's embedded and stored, the user's question is screened before it reaches the agent,
+and the agent's final answer is screened for system-prompt leakage before being returned.
+Configured with **no LLM at all** (`models: []` in NeMo's config) — dialog/response generation
+is disabled per-call via `GenerationOptions`, so this only ever runs the fast, free,
+pattern-matching rail and never makes a network call of its own.
 
 **Observability & evals** — every LLM call and agent step is traced in Opik (also used for
 prompt versioning, so a prompt change is never a silent, untracked edit). Retrieval and answer
@@ -98,7 +102,7 @@ compliance system needs to keep regardless.
 | Reranker | Local cross-encoder, no API key |
 | Agent orchestration | LangGraph |
 | Auth | JWT (PyJWT), OAuth2 password flow, role-based access control |
-| Guardrails | NeMo Guardrails (input injection screening + output validation) |
+| Guardrails | NeMo Guardrails, regex rails, no LLM required (input + output, behind a `Guardrails` port) |
 | Observability & prompt management | Opik |
 | Evals | Ragas (faithfulness, context precision/recall, answer relevancy) |
 | Memory | Postgres-backed query history (doubles as audit trail) |
@@ -213,7 +217,16 @@ Built incrementally, one phase per commit/PR — see commit history for progress
       committed, so every write silently rolled back on session close while Qdrant's write
       went through unconditionally — fixed by reusing the `session_scope()` helper Phase 2's
       own tests already relied on, instead of the subtly-different one written for the API
-- [ ] **Phase 7b** — NeMo Guardrails (input *and* output rails together — one combined config)
+- [x] **Phase 7b** — NeMo Guardrails: `Guardrails` port + `NeMoGuardrailsService`, wired into
+      both directions — `IngestDocumentUseCase` screens every chunk before it's embedded and
+      stored, `ComplianceAgent.ask()` screens the incoming question and the outgoing answer.
+      Configured with zero LLM (`models: []`); dialog/generation disabled per-call via
+      `GenerationOptions`, so it's pure regex pattern-matching — free, no network call, and
+      fast enough to be a regular unit test rather than an integration one. A "blocked" verdict
+      is detected by comparing NeMo's output against the original text (pass-through vs.
+      substituted) rather than string-matching its default refusal wording, which turned out
+      not to be reliably reachable through custom Colang flows in this version — verified with
+      a real prototype before committing to the approach, not assumed
 - [ ] **Phase 8** — Streamlit UI: upload, chat, comparison, action-item dashboard
 - [ ] **Phase 9** — Opik observability/prompt management + Ragas eval set
 - [ ] **Phase 10** — CI, deployment polish, docs

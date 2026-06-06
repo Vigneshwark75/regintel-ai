@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from regintel_application.ports.document_repository import DocumentRepository
 from regintel_application.ports.embedding_provider import EmbeddingProvider, SparseEmbeddingProvider
+from regintel_application.ports.guardrails import Guardrails
 from regintel_application.ports.vector_store import VectorEntry, VectorStore
 from regintel_domain import Chunk, Document
 
@@ -20,10 +21,19 @@ class IngestDocumentUseCase:
     vector_store: VectorStore
     embedding_provider: EmbeddingProvider
     sparse_embedding_provider: SparseEmbeddingProvider
+    guardrails: Guardrails
 
     async def execute(self, document: Document, chunks: list[Chunk]) -> None:
         if not chunks:
             raise ValueError("a document must have at least one chunk to be ingested")
+
+        for chunk in chunks:
+            result = await self.guardrails.check_input(chunk.content)
+            if not result.allowed:
+                raise ValueError(
+                    f"input guardrail rejected chunk {chunk.chunk_index} of document "
+                    f"{document.id}: {result.reason}"
+                )
 
         await self.document_repository.save_document(document)
         await self.document_repository.save_chunks(chunks)

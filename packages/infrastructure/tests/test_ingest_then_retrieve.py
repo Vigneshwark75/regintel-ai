@@ -13,6 +13,7 @@ from regintel_infrastructure.chunking.regulation_chunker import build_chunks_fro
 from regintel_infrastructure.db.document_repository import PostgresDocumentRepository
 from regintel_infrastructure.embeddings.bm25_sparse_provider import Bm25SparseEmbeddingProvider
 from regintel_infrastructure.embeddings.local_dense_provider import LocalDenseEmbeddingProvider
+from regintel_infrastructure.guardrails.nemo_guardrails_service import NeMoGuardrailsService
 from regintel_infrastructure.reranking.local_cross_encoder_reranker import LocalCrossEncoderReranker
 from regintel_infrastructure.vector_store.qdrant_store import QdrantVectorStore
 
@@ -44,7 +45,9 @@ async def vector_store(qdrant_client: AsyncQdrantClient) -> AsyncIterator[Qdrant
 
 
 async def test_ingested_chunk_is_retrievable_by_a_relevant_query(
-    db_session, vector_store: QdrantVectorStore  # type: ignore[no-untyped-def]
+    db_session,  # type: ignore[no-untyped-def]
+    vector_store: QdrantVectorStore,
+    guardrails: NeMoGuardrailsService,
 ) -> None:
     document_repository = PostgresDocumentRepository(db_session)
     dense_provider = LocalDenseEmbeddingProvider()
@@ -64,6 +67,7 @@ async def test_ingested_chunk_is_retrievable_by_a_relevant_query(
         vector_store=vector_store,
         embedding_provider=dense_provider,
         sparse_embedding_provider=sparse_provider,
+        guardrails=guardrails,
     )
     await ingest.execute(document, chunks)
 
