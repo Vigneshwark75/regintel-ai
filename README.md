@@ -227,6 +227,13 @@ Built incrementally, one phase per commit/PR — see commit history for progress
       substituted) rather than string-matching its default refusal wording, which turned out
       not to be reliably reachable through custom Colang flows in this version — verified with
       a real prototype before committing to the approach, not assumed
-- [ ] **Phase 8** — Streamlit UI: upload, chat, comparison, action-item dashboard
+- [x] **Phase 8** — Streamlit UI: login (JWT, role-aware), upload, ask (with citations),
+      compare, action-item generation — all calling the real API via `api_client.py`, with
+      `UI_API_BASE_URL` configurable for hosting the UI and API on different domains.
+      Verified two ways: `AppTest`-based unit tests for structural rendering, `httpx`
+      mock-transport tests for the API client's request construction, and a full manual
+      click-through in a real browser against the live API/Postgres/Qdrant/Groq stack —
+      login, page navigation, and a real grounded (and real ungrounded — "no citations
+      returned" — path) `/ask` round trip all confirmed working end-to-end
 - [ ] **Phase 9** — Opik observability/prompt management + Ragas eval set
 - [ ] **Phase 10** — CI, deployment polish, docs

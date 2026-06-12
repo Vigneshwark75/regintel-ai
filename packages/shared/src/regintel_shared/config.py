@@ -12,6 +12,10 @@ class Settings(BaseSettings):
 
     api_host: str = "0.0.0.0"
     api_port: int = 8000
+    # Where the Streamlit UI reaches the API — same box today (localhost), but a
+    # distinct setting so hosting the two on different domains is a config change,
+    # not a code change.
+    ui_api_base_url: str = "http://localhost:8000"
 
     postgres_dsn: str = "postgresql+psycopg://regintel:regintel@localhost:5432/regintel"
 
