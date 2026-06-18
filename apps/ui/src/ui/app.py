@@ -30,7 +30,15 @@ def render_login() -> None:
         submitted = st.form_submit_button("Log in")
 
     if submitted:
-        token = login(username, password)
+        try:
+            token = login(username, password)
+        except httpx.TransportError:
+            st.error(
+                "Can't reach the API right now. If you're viewing a hosted demo, the "
+                "backend may not be deployed yet — this UI still works standalone, but "
+                "needs a running API to log in."
+            )
+            return
         if token is None:
             st.error("Invalid username or password.")
         else:
