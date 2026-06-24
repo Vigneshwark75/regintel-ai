@@ -1,0 +1,7 @@
+# Used only by hosting platforms that don't understand our uv workspace (e.g.
+# Streamlit Community Cloud's build step) — local dev uses `uv sync`/`uv run`
+# exclusively and never reads this file. Editable-installs the two local
+# packages the Streamlit UI actually needs; pip resolves their own
+# dependencies (streamlit, httpx, pydantic-settings, structlog) from PyPI.
+-e ./packages/shared
+-e ./apps/ui
