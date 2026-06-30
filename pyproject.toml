@@ -3,7 +3,15 @@ name = "regintel-ai"
 version = "0.1.0"
 description = "RegIntel AI — Enterprise Regulatory Intelligence Platform (Agentic RAG)."
 requires-python = ">=3.11"
-dependencies = []
+# regintel-ui listed here (and only here, not the heavier api/domain/application/
+# infrastructure members) so that a plain `uv sync` — no `--all-packages` flag —
+# installs enough to run the Streamlit UI standalone. This exists specifically for
+# hosting platforms (Streamlit Community Cloud) that invoke `uv sync` themselves and
+# give us no way to pass extra flags; local dev always uses `make sync`
+# (`uv sync --all-packages`) and never depends on this list being complete.
+dependencies = [
+    "regintel-ui",
+]
 
 [dependency-groups]
 dev = [
@@ -30,6 +38,7 @@ regintel-domain = { workspace = true }
 regintel-application = { workspace = true }
 regintel-infrastructure = { workspace = true }
 regintel-shared = { workspace = true }
+regintel-ui = { workspace = true }
 
 # --------------------------------------------------------------------------
 # Ruff — linting + import sorting
