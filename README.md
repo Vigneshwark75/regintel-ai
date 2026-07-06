@@ -2,6 +2,11 @@
 
 **Enterprise Regulatory Intelligence Platform — Agentic RAG**
 
+**Live UI**: [regintel-ai.streamlit.app](https://regintel-ai.streamlit.app) — the frontend is
+hosted (Streamlit Community Cloud, free); the backend (Postgres/Qdrant/FastAPI) isn't hosted
+yet, so login will show a "can't reach the API" message until that lands. That's expected, not
+broken — see the Roadmap.
+
 Banks and NBFCs receive a constant stream of RBI circulars, master directions, notifications,
 and FAQs. Compliance teams (CRO, Compliance Officers, Risk, Internal Audit, Ops) spend
 significant time reading these documents, spotting what changed, answering regulatory
@@ -234,6 +239,16 @@ Built incrementally, one phase per commit/PR — see commit history for progress
       mock-transport tests for the API client's request construction, and a full manual
       click-through in a real browser against the live API/Postgres/Qdrant/Groq stack —
       login, page navigation, and a real grounded (and real ungrounded — "no citations
-      returned" — path) `/ask` round trip all confirmed working end-to-end
+      returned" — path) `/ask` round trip all confirmed working end-to-end. Also deployed
+      to Streamlit Community Cloud (free) — see the live link above. Two real deploy-time
+      bugs found and fixed from actual build logs, not guessed: `uv sync` (no
+      `--all-packages`) at the workspace root wasn't installing the UI's own dependencies at
+      all (root `pyproject.toml` now lists `regintel-ui` as a dependency specifically so a
+      plain `uv sync` — what hosting platforms invoke, with no way for us to pass flags —
+      resolves everything needed), and a `streamlit`/`starlette` version pairing that only
+      breaks on Python 3.14 (`.python-version` pins 3.12, what this project is actually
+      tested against). Backend (Postgres/Qdrant/FastAPI) hosting deliberately deferred to
+      Phase 10 rather than rushed here
 - [ ] **Phase 9** — Opik observability/prompt management + Ragas eval set
-- [ ] **Phase 10** — CI, deployment polish, docs
+- [ ] **Phase 10** — CI, deployment polish, docs — including hosting the backend
+      (Postgres/Qdrant/FastAPI) so the live UI is fully functional, not just reachable
