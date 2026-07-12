@@ -33,6 +33,13 @@ class Settings(BaseSettings):
     groq_api_key: str | None = None
     llm_model: str = "llama-3.3-70b-versatile"
 
+    # Opik Cloud (comet.com) — free tier. Tracing is fully disabled (no network calls
+    # at all, not just "logged out") when opik_api_key is unset, so the app and test
+    # suite work identically with or without it configured.
+    opik_api_key: str | None = None
+    opik_workspace: str = "default"
+    opik_project_name: str = "regintel-ai"
+
     # HS256 wants >=32 bytes (RFC 7518 §3.2) — this default is long enough to avoid
     # PyJWT's InsecureKeyLengthWarning even as a placeholder; still MUST be replaced
     # for anything beyond local dev (see .env.example: `openssl rand -hex 32`).

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Literal, TypedDict
 from uuid import UUID
 
+import opik
 from langgraph.graph import END, StateGraph
 
 from regintel_application.agent.tools import ALL_TOOLS
@@ -98,6 +99,7 @@ class ComplianceAgent:
 
         return {"messages": [*state["messages"], *new_messages], "citations": new_citations}
 
+    @opik.track(type="tool", name="agent_tool_dispatch")  # type: ignore[untyped-decorator]
     async def _dispatch(self, call: ToolCall) -> tuple[str, list[Citation]]:
         if call.name == "retrieve_chunks":
             citations = await self.retrieve_chunks.execute(call.arguments["query"])
@@ -130,6 +132,7 @@ class ComplianceAgent:
 
         return f"Unknown tool: {call.name}", []
 
+    @opik.track(type="general", name="compliance_agent_ask")  # type: ignore[untyped-decorator]
     async def ask(self, question: str) -> tuple[str, list[Citation]]:
         input_check = await self.guardrails.check_input(question)
         if not input_check.allowed:

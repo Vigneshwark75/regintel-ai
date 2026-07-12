@@ -83,10 +83,10 @@ Configured with **no LLM at all** (`models: []` in NeMo's config) — dialog/res
 is disabled per-call via `GenerationOptions`, so this only ever runs the fast, free,
 pattern-matching rail and never makes a network call of its own.
 
-**Observability & evals** — every LLM call and agent step is traced in Opik (also used for
-prompt versioning, so a prompt change is never a silent, untracked edit). Retrieval and answer
-quality are measured with Ragas (faithfulness, context precision/recall, answer relevancy)
-against a small golden eval set.
+**Observability & evals** — every LLM call and agent step is traced in Opik, free tier,
+completely inert (no network calls) when unconfigured. Retrieval and answer quality are
+measured with Ragas (faithfulness, context precision/recall, answer relevancy) against a small
+golden eval set.
 
 **Auth/RBAC** — JWT-based, roles: CRO, Compliance Officer, Risk, Auditor, Ops.
 
@@ -249,6 +249,18 @@ Built incrementally, one phase per commit/PR — see commit history for progress
       breaks on Python 3.14 (`.python-version` pins 3.12, what this project is actually
       tested against). Backend (Postgres/Qdrant/FastAPI) hosting deliberately deferred to
       Phase 10 rather than rushed here
-- [ ] **Phase 9** — Opik observability/prompt management + Ragas eval set
+- [x] **Phase 9a** — Opik tracing: `@opik.track` on `GroqProvider.complete()` (LLM calls),
+      `ComplianceAgent._dispatch()` (each tool call), and `ask()` (the whole interaction as one
+      trace). Fully disabled — zero network calls, not just "logged out" — when no
+      `OPIK_API_KEY` is set, verified by reproducing the noisy default behavior first (failed
+      auth requests on every span) and then confirming `opik.set_tracing_active(False)` at
+      startup eliminates it entirely. Prompt versioning (Opik's `Prompt`/`ChatPrompt` objects)
+      deliberately deferred — our system prompts are already versioned, just via git rather
+      than a separate system, which is arguably the more standard answer at this project's
+      size. Verified against real Opik Cloud through the actual production path (the running
+      API, not a bypassed test double): a real `/ask` request produced
+      `POST .../spans/batch` and `POST .../traces/batch`, both `204 No Content` — genuine
+      successful trace uploads, confirmed in the server log, not assumed from a lack of errors
+- [ ] **Phase 9b** — Ragas eval set
 - [ ] **Phase 10** — CI, deployment polish, docs — including hosting the backend
       (Postgres/Qdrant/FastAPI) so the live UI is fully functional, not just reachable

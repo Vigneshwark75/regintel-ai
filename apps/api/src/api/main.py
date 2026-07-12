@@ -13,10 +13,12 @@ ensure_windows_selector_event_loop()
 
 from api.dependencies import get_vector_store  # noqa: E402 -- must follow the event loop fix above
 from api.routers import agent, auth, documents  # noqa: E402
+from regintel_infrastructure.observability import configure_opik_tracing  # noqa: E402
 
 settings = get_settings()
 configure_logging(settings.log_level)
 logger = get_logger(__name__)
+configure_opik_tracing(settings.opik_api_key, settings.opik_workspace, settings.opik_project_name)
 
 
 @asynccontextmanager

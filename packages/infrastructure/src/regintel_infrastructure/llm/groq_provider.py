@@ -1,6 +1,7 @@
 import json
 from typing import Any
 
+import opik
 from groq import AsyncGroq, BadRequestError
 
 from regintel_application.ports.llm_provider import LLMMessage, LLMResponse, ToolCall
@@ -32,6 +33,7 @@ class GroqProvider:
         self._model = model
         self._tool_call_retries = tool_call_retries
 
+    @opik.track(type="llm", name="groq_complete")  # type: ignore[untyped-decorator]
     async def complete(
         self, messages: list[LLMMessage], tools: list[dict[str, Any]] | None = None
     ) -> LLMResponse:
