@@ -22,6 +22,9 @@ htmlcov/
 # Node (Streamlit needs none, but keep clean if we ever add JS tooling)
 node_modules/
 
+# LinkedIn build-log posts — personal, never pushed to this repo's git history
+/linkedin-posts/
+
 # OS / editor
 .DS_Store
 Thumbs.db
