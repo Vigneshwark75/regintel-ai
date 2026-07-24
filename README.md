@@ -1,5 +1,7 @@
 # RegIntel AI
 
+[![CI](https://github.com/Vigneshwark75/regintel-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Vigneshwark75/regintel-ai/actions/workflows/ci.yml)
+
 **Enterprise Regulatory Intelligence Platform — Agentic RAG**
 
 **Live UI**: [regintel-ai.streamlit.app](https://regintel-ai.streamlit.app) — the frontend is
@@ -186,6 +188,12 @@ containers rather than mocks — a schema or query-shape bug should fail here, n
 production. They're marked `@pytest.mark.integration` and excluded from the default `make
 test` run so the fast feedback loop never needs Docker running.
 
+**CI** (`.github/workflows/ci.yml`) runs lint/format-check/`mypy --strict`/unit tests on every
+push and PR. Deliberately scoped to unit tests only, not integration: those need live
+Postgres/Qdrant containers plus real `GROQ_API_KEY`/`OPIK_API_KEY` secrets, which means wiring
+up GitHub Actions secrets and a services block — real, doable work, just out of scope for now
+rather than half-done.
+
 ## Roadmap
 
 Built incrementally, one phase per commit/PR — see commit history for progress.
@@ -261,6 +269,13 @@ Built incrementally, one phase per commit/PR — see commit history for progress
       API, not a bypassed test double): a real `/ask` request produced
       `POST .../spans/batch` and `POST .../traces/batch`, both `204 No Content` — genuine
       successful trace uploads, confirmed in the server log, not assumed from a lack of errors
-- [ ] **Phase 9b** — Ragas eval set
+- [ ] **Phase 9b** — Ragas eval set. Scoped out before implementation: a real dependency check
+      showed `ragas` pulls in `langchain`/`langchain-openai` and expects a LangChain-wrapped LLM
+      as its judge (same shape of friction NeMo Guardrails had, but NeMo's regex rails let us
+      avoid it entirely — Ragas's actual scoring metrics need a real judge model, so there's no
+      equivalent zero-LLM path here). `langchain-groq` exists as a real, official integration,
+      so a zero-cost path is possible; not built due to remaining scope. Revisit if evals become
+      a priority — the `RetrieveChunksUseCase`/`ComplianceAgent` seams this would hook into
+      already exist and don't need to change
 - [ ] **Phase 10** — CI, deployment polish, docs — including hosting the backend
       (Postgres/Qdrant/FastAPI) so the live UI is fully functional, not just reachable
