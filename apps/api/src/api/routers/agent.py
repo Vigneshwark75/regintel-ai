@@ -20,8 +20,8 @@ router = APIRouter(tags=["agent"])
 @router.post("/ask", response_model=AskResponse)
 async def ask(
     request: AskRequest,
-    agent: Annotated[ComplianceAgent, Depends(get_compliance_agent)],
     _user: Annotated[AuthenticatedUser, Depends(get_current_user)],
+    agent: Annotated[ComplianceAgent, Depends(get_compliance_agent)],
 ) -> AskResponse:
     answer, citations = await agent.ask(request.question)
     return AskResponse(answer=answer, citations=citations)
@@ -30,8 +30,8 @@ async def ask(
 @router.post("/action-items", response_model=GenerateActionItemsResponse)
 async def generate_action_items(
     request: GenerateActionItemsRequest,
-    use_case: Annotated[GenerateActionItemsUseCase, Depends(get_generate_action_items_use_case)],
     _user: Annotated[AuthenticatedUser, Depends(get_current_user)],
+    use_case: Annotated[GenerateActionItemsUseCase, Depends(get_generate_action_items_use_case)],
 ) -> GenerateActionItemsResponse:
     items = await use_case.execute(request.topic, request.owner_role)
     return GenerateActionItemsResponse(

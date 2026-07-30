@@ -31,8 +31,8 @@ async def upload_document(
     document_type: Annotated[DocumentType, Form()],
     reference_number: Annotated[str, Form()],
     issued_date: Annotated[date, Form()],
-    ingest: Annotated[IngestDocumentUseCase, Depends(get_ingest_document_use_case)],
     _user: Annotated[AuthenticatedUser, Depends(_require_uploader)],
+    ingest: Annotated[IngestDocumentUseCase, Depends(get_ingest_document_use_case)],
 ) -> DocumentUploadResponse:
     if not file.filename:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="file must have a name")
@@ -57,8 +57,8 @@ async def upload_document(
 @router.post("/{document_id}/summarize", response_model=SummarizeResponse)
 async def summarize_document(
     document_id: UUID,
-    summarize: Annotated[SummarizeRegulationUseCase, Depends(get_summarize_regulation_use_case)],
     _user: Annotated[AuthenticatedUser, Depends(get_current_user)],
+    summarize: Annotated[SummarizeRegulationUseCase, Depends(get_summarize_regulation_use_case)],
 ) -> SummarizeResponse:
     try:
         summary = await summarize.execute(document_id)
@@ -70,8 +70,8 @@ async def summarize_document(
 @router.post("/compare", response_model=CompareResponse)
 async def compare_documents(
     request: CompareRequest,
-    compare: Annotated[CompareRegulationsUseCase, Depends(get_compare_regulations_use_case)],
     _user: Annotated[AuthenticatedUser, Depends(get_current_user)],
+    compare: Annotated[CompareRegulationsUseCase, Depends(get_compare_regulations_use_case)],
 ) -> CompareResponse:
     try:
         comparison = await compare.execute(request.document_id_a, request.document_id_b)
