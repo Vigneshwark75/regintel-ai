@@ -277,5 +277,10 @@ Built incrementally, one phase per commit/PR — see commit history for progress
       so a zero-cost path is possible; not built due to remaining scope. Revisit if evals become
       a priority — the `RetrieveChunksUseCase`/`ComplianceAgent` seams this would hook into
       already exist and don't need to change
-- [ ] **Phase 10** — CI, deployment polish, docs — including hosting the backend
-      (Postgres/Qdrant/FastAPI) so the live UI is fully functional, not just reachable
+- [x] **Phase 10** — GitHub Actions CI (`.github/workflows/ci.yml`): lint, format-check,
+      `mypy --strict`, unit tests on every push/PR. Caught a real bug on its first real run —
+      see the auth-ordering fix in the commit log. Hosting the backend (Postgres/Qdrant/FastAPI)
+      so the live UI is fully functional, not just reachable, is deliberately out of scope: the
+      free tiers available (Render/Railway/Neon/Qdrant Cloud) all mean juggling more accounts and
+      cold-start latency for a demo, not solving a real problem — revisit only if this needs to
+      run live for someone other than me
