@@ -31,7 +31,8 @@ claim back to a source clause. That decision-making loop is the "agentic" part.
 
 Hexagonal / clean architecture: domain logic has zero knowledge of Qdrant, Postgres, or which
 LLM vendor is active. This is what makes "swap the LLM provider" or "swap the vector store" a
-contained change instead of a rewrite.
+contained change instead of a rewrite. See [docs/architecture.md](docs/architecture.md) for a
+component diagram.
 
 ```
 regintel-ai/
