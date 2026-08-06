@@ -31,8 +31,23 @@ claim back to a source clause. That decision-making loop is the "agentic" part.
 
 Hexagonal / clean architecture: domain logic has zero knowledge of Qdrant, Postgres, or which
 LLM vendor is active. This is what makes "swap the LLM provider" or "swap the vector store" a
-contained change instead of a rewrite. See [docs/architecture.md](docs/architecture.md) for a
-component diagram.
+contained change instead of a rewrite. See [docs/architecture.md](docs/architecture.md) for the
+full flow write-up.
+
+```mermaid
+flowchart LR
+    UI["Streamlit UI"] --> API["FastAPI\n(auth + routes)"]
+    API --> Ingest["Ingestion\nparse → chunk → embed"]
+    API --> Agent["Agent\nLangGraph tool loop"]
+
+    Agent --> Retrieve["Hybrid retrieval\ndense + BM25 + rerank"]
+    Agent --> Groq[("Groq LLM")]
+
+    Ingest --> Qdrant[("Qdrant\nvectors")]
+    Ingest --> Postgres[("Postgres\ndocs + metadata")]
+    Retrieve --> Qdrant
+    Retrieve --> Postgres
+```
 
 ```
 regintel-ai/
