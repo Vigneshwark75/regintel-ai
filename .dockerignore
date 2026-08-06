@@ -1,0 +1,12 @@
+.git
+.venv
+**/__pycache__
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.env
+linkedin-posts
+HANDOFF.md
+apps/ui/tests
+apps/api/tests
+packages/*/tests

@@ -1,0 +1,56 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Deploy: Render dashboard -> New -> Blueprint -> pick this repo. Provisions the
+# Postgres database and the API web service together; Qdrant is not on Render
+# (Render has no vector-store product) — use Qdrant Cloud's free tier and paste its
+# URL/API key in below. See docs/deployment.md for the full walkthrough.
+databases:
+  - name: regintel-postgres
+    plan: free
+    databaseName: regintel
+    user: regintel
+
+services:
+  - type: web
+    name: regintel-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /docs
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      # Render's Postgres connection string uses the postgresql:// scheme; this app
+      # needs the psycopg3 driver spelled out. Take the "Internal Database URL" from
+      # the regintel-postgres dashboard and change postgresql:// to
+      # postgresql+psycopg:// before pasting it here.
+      - key: POSTGRES_DSN
+        sync: false
+      # From Qdrant Cloud's cluster dashboard (see docs/deployment.md).
+      - key: QDRANT_URL
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: QDRANT_COLLECTION
+        value: regintel_chunks
+      # Free tier at console.groq.com.
+      - key: GROQ_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: llama-3.3-70b-versatile
+      # Render generates a real random value for this — never a placeholder.
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRY_MINUTES
+        value: "60"
+      # The deployed Streamlit UI's URL, so its CORS/reference config points here;
+      # set once you know this service's own onrender.com URL.
+      - key: UI_API_BASE_URL
+        sync: false
+      # Optional — free tier at comet.com/opik. Leave blank to keep tracing disabled.
+      - key: OPIK_API_KEY
+        sync: false

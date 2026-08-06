@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     postgres_dsn: str = "postgresql+psycopg://regintel:regintel@localhost:5432/regintel"
 
     qdrant_url: str = "http://localhost:6333"
+    # Unset for local Docker Qdrant (no auth); required by Qdrant Cloud.
+    qdrant_api_key: str | None = None
     qdrant_collection: str = "regintel_chunks"
     # Local fastembed model — no API key, zero cost, so cloning this repo needs no
     # embedding provider signup. 384 dims is bge-small's native output size.

@@ -52,7 +52,8 @@ async def get_db_session() -> AsyncIterator[AsyncSession]:
 
 @lru_cache
 def get_qdrant_client() -> AsyncQdrantClient:
-    return AsyncQdrantClient(url=get_settings().qdrant_url)
+    settings = get_settings()
+    return AsyncQdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key)
 
 
 def get_vector_store() -> QdrantVectorStore:

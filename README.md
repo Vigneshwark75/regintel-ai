@@ -7,7 +7,7 @@
 **Live UI**: [regintel-ai.streamlit.app](https://regintel-ai.streamlit.app) — the frontend is
 hosted (Streamlit Community Cloud, free); the backend (Postgres/Qdrant/FastAPI) isn't hosted
 yet, so login will show a "can't reach the API" message until that lands. That's expected, not
-broken — see the Roadmap.
+broken — see [docs/deployment.md](docs/deployment.md) for the (ready to run) hosting guide.
 
 Banks and NBFCs receive a constant stream of RBI circulars, master directions, notifications,
 and FAQs. Compliance teams (CRO, Compliance Officers, Risk, Internal Audit, Ops) spend
@@ -295,8 +295,12 @@ Built incrementally, one phase per commit/PR — see commit history for progress
       already exist and don't need to change
 - [x] **Phase 10** — GitHub Actions CI (`.github/workflows/ci.yml`): lint, format-check,
       `mypy --strict`, unit tests on every push/PR. Caught a real bug on its first real run —
-      see the auth-ordering fix in the commit log. Hosting the backend (Postgres/Qdrant/FastAPI)
-      so the live UI is fully functional, not just reachable, is deliberately out of scope: the
-      free tiers available (Render/Railway/Neon/Qdrant Cloud) all mean juggling more accounts and
-      cold-start latency for a demo, not solving a real problem — revisit only if this needs to
-      run live for someone other than me
+      see the auth-ordering fix in the commit log.
+- [x] **Phase 10a** — Backend hosting config: `Dockerfile` + `render.yaml` blueprint (Postgres +
+      FastAPI on Render) plus a Qdrant Cloud walkthrough — see
+      [docs/deployment.md](docs/deployment.md). Required one real code change, not just config:
+      the Qdrant client only ever connected unauthenticated (`AsyncQdrantClient(url=...)`), which
+      works against local Docker Qdrant but not Qdrant Cloud, so `qdrant_api_key` was added to
+      `Settings` and threaded through. Deploying still means someone actually clicking through
+      Render/Qdrant Cloud signup and pasting in secrets — that's a manual step for whoever runs
+      this live, not something to automate away
